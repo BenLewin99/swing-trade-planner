@@ -403,8 +403,8 @@ function calculate() {
   var buyNZD  = buyUSD / rate;
   var sellNZD = sellUSD / rate;
   var stopNZD = stopUSD / rate;
-  var shares  = Math.floor(invest / buyNZD);
-  var invested = shares * buyNZD;
+  var shares  = invest / buyNZD;
+  var invested = invest;
   var gain    = shares * (sellNZD - buyNZD);
   var loss    = shares * (buyNZD - stopNZD);
   var rr      = loss > 0 ? (gain / loss) : 0;
@@ -437,7 +437,7 @@ function calculate() {
       '</div>' +
 
       '<div class="summary-grid">' +
-        sm('Shares to buy', shares) +
+        sm('Shares to buy', shares.toFixed(4)) +
         sm('Max profit (NZD)', '+$' + gain.toFixed(0), 'var(--green)') +
         sm('Max loss (NZD)', '−$' + loss.toFixed(0), 'var(--red)') +
       '</div>' +
