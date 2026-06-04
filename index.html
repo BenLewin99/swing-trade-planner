@@ -319,14 +319,12 @@ async function fetchPrice() {
     // Parse stock
     if (!stockRes.ok) throw new Error('HTTP ' + stockRes.status);
     var stockData = await stockRes.json();
-    var result = stockData && stockData.chart && stockData.chart.result && stockData.chart.result[0];
-    if (!result) throw new Error('No data returned');
 
-    var meta = result.meta;
-    var price = meta.regularMarketPrice || meta.previousClose;
-    var prevClose = meta.chartPreviousClose || meta.previousClose || price;
-    var changePct = prevClose ? ((price - prevClose) / prevClose * 100) : 0;
-    var currency = meta.currency || 'USD';
+    if (!stockData.valid) throw new Error('No data for ' + ticker);
+
+    var price = stockData.price;
+    var changePct = stockData.changePct;
+    var currency = stockData.currency || 'USD';
 
     if (!price) throw new Error('Price not found');
     if (currency !== 'USD') throw new Error('Only USD stocks supported (US-listed tickers)');
