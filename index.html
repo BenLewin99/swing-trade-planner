@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swing Trade Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --bg2: #111111;
+    --bg3: #1a1a1a;
+    --bg4: #222222;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --t1: #f0f0f0;
+    --t2: #888;
+    --t3: #555;
+    --green: #00e096;
+    --red: #ff4f4f;
+    --blue: #4da6ff;
+    --amber: #ffb84d;
+    --mono: 'IBM Plex Mono', monospace;
+    --display: 'Syne', sans-serif;
+  }
+
+  html { background: var(--bg); color: var(--t1); font-family: var(--mono); min-height: 100vh; }
+  body { max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  /* Header */
+  .header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 0.5px solid var(--border); }
+  .header-left h1 { font-family: var(--display); font-size: 26px; font-weight: 700; letter-spacing: -0.5px; color: var(--t1); }
+  .header-left p { font-size: 11px; color: var(--t2); margin-top: 4px; letter-spacing: .08em; text-transform: uppercase; }
+  .header-right { font-size: 11px; color: var(--t3); text-align: right; line-height: 1.6; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; border-bottom: 0.5px solid var(--border); margin-bottom: 1.75rem; }
+  .tab { padding: 9px 20px; font-size: 12px; font-family: var(--mono); cursor: pointer; border: none; background: none; color: var(--t2); border-bottom: 2px solid transparent; letter-spacing: .07em; text-transform: uppercase; transition: all .15s; }
+  .tab.active { color: var(--t1); border-bottom-color: var(--green); }
+  .tab:hover:not(.active) { color: var(--t1); }
+  .pane { display: none; }
+  .pane.active { display: block; }
+
+  /* Form elements */
+  label { font-size: 10px; color: var(--t2); display: block; margin-bottom: 5px; letter-spacing: .1em; text-transform: uppercase; }
+  input, select {
+    width: 100%; background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 6px;
+    color: var(--t1); font-family: var(--mono); font-size: 14px; padding: 9px 12px;
+    outline: none; transition: border-color .15s;
+  }
+  input:focus, select:focus { border-color: rgba(255,255,255,0.35); }
+  input::placeholder { color: var(--t3); }
+  select option { background: var(--bg3); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+
+  /* Ticker row */
+  .ticker-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 12px; }
+  .ticker-row > div:first-child { flex: 1; }
+  .ticker-row input { font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px; font-size: 12px; font-family: var(--mono); border-radius: 6px; border: 0.5px solid var(--border2); background: none; color: var(--t1); cursor: pointer; letter-spacing: .05em; text-transform: uppercase; transition: all .15s; white-space: nowrap; }
+  .btn:hover { background: var(--bg3); border-color: rgba(255,255,255,.25); }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--green); color: #000; border-color: var(--green); font-weight: 600; }
+  .btn-primary:hover { background: #00c882; border-color: #00c882; }
+  .btn-full { width: 100%; justify-content: center; margin-bottom: 1.25rem; }
+
+  /* Quick chips */
+  .quick-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+  .quick-label { font-size: 10px; color: var(--t3); letter-spacing: .08em; text-transform: uppercase; }
+  .chip { font-size: 11px; font-family: var(--mono); padding: 4px 11px; border-radius: 4px; border: 0.5px solid var(--border); background: none; color: var(--t2); cursor: pointer; transition: all .12s; letter-spacing: .04em; }
+  .chip:hover { background: var(--bg3); color: var(--t1); border-color: var(--border2); }
+
+  /* Price badge */
+  .price-badge {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: var(--bg2); border: 0.5px solid var(--border2); border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 14px;
+  }
+  .pb-ticker { font-family: var(--display); font-size: 15px; font-weight: 700; color: var(--t2); letter-spacing: .04em; }
+  .pb-price { font-family: var(--mono); font-size: 24px; font-weight: 600; color: var(--t1); }
+  .pb-price span { font-size: 13px; color: var(--t2); margin-left: 3px; }
+  .pb-chg { font-size: 12px; padding: 3px 9px; border-radius: 4px; font-weight: 600; }
+  .pb-chg.up { background: rgba(0,224,150,.1); color: var(--green); }
+  .pb-chg.dn { background: rgba(255,79,79,.1); color: var(--red); }
+  .pb-rate { font-size: 11px; color: var(--t3); margin-left: auto; }
+  .pb-time { font-size: 10px; color: var(--t3); width: 100%; margin-top: -4px; }
+
+  /* Spinner */
+  .spin { display: inline-block; width: 13px; height: 13px; border: 1.5px solid var(--border2); border-top-color: var(--t2); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Divider */
+  .divider { height: 0.5px; background: var(--border); margin: 1.25rem 0; }
+
+  /* Alert card */
+  .alert-card { background: var(--bg2); border: 0.5px solid var(--border2); border-radius: 10px; overflow: hidden; margin-bottom: 1rem; }
+  .alert-card-hdr { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 0.5px solid var(--border); }
+  .ac-title { font-family: var(--display); font-size: 16px; font-weight: 700; color: var(--t1); }
+  .ac-rr { font-size: 11px; padding: 3px 9px; border-radius: 4px; font-weight: 600; letter-spacing: .04em; }
+  .ac-rr.good { background: rgba(0,224,150,.1); color: var(--green); }
+  .ac-rr.bad { background: rgba(255,79,79,.1); color: var(--red); }
+
+  .alert-row { display: flex; align-items: center; padding: 13px 16px; border-bottom: 0.5px solid var(--border); gap: 12px; }
+  .alert-row:last-of-type { border-bottom: none; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .al-info { flex: 1; }
+  .al-label { font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--t2); font-weight: 600; }
+  .al-desc { font-size: 11px; color: var(--t3); margin-top: 2px; }
+  .al-prices { text-align: right; }
+  .al-usd { font-size: 17px; font-weight: 600; font-family: var(--mono); }
+  .al-nzd { font-size: 11px; color: var(--t2); margin-top: 2px; }
+
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px 16px; border-top: 0.5px solid var(--border); background: var(--bg3); }
+  .sm { background: var(--bg2); border-radius: 6px; padding: 10px 12px; text-align: center; }
+  .sm-label { font-size: 10px; color: var(--t2); text-transform: uppercase; letter-spacing: .08em; }
+  .sm-val { font-size: 16px; font-weight: 600; margin-top: 4px; }
+
+  .save-row { padding: 10px 16px 12px; display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* Stat boxes */
+  .stat-box { background: var(--bg2); border: 0.5px solid var(--border); border-radius: 8px; padding: 12px 14px; text-align: center; }
+  .stat-label { font-size: 10px; color: var(--t2); text-transform: uppercase; letter-spacing: .08em; }
+  .stat-val { font-size: 22px; font-weight: 600; margin-top: 6px; color: var(--t1); }
+
+  /* Log table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 580px; }
+  th { text-align: left; font-size: 10px; color: var(--t2); padding: 7px 10px; border-bottom: 0.5px solid var(--border); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
+  td { padding: 10px 10px; border-bottom: 0.5px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+
+  .tag { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 3px; font-weight: 600; letter-spacing: .04em; }
+  .tag-w { background: rgba(255,184,77,.1); color: var(--amber); }
+  .tag-o { background: rgba(77,166,255,.1); color: var(--blue); }
+  .tag-p { background: rgba(0,224,150,.1); color: var(--green); }
+  .tag-l { background: rgba(255,79,79,.1); color: var(--red); }
+
+  .status-select { font-size: 11px; padding: 3px 6px; margin-top: 5px; display: block; width: 100%; }
+
+  /* Empty / error states */
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--t3); font-size: 13px; line-height: 2; }
+  .empty-icon { font-size: 32px; display: block; margin-bottom: 10px; }
+  .err-msg { font-size: 12px; color: var(--red); margin-bottom: 10px; padding: 8px 12px; background: rgba(255,79,79,.08); border-radius: 5px; border: 0.5px solid rgba(255,79,79,.2); }
+
+  /* Ratio bar */
+  .rr-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px 12px; }
+  .rr-label { font-size: 11px; color: var(--t2); flex-shrink: 0; }
+  .rr-bar-bg { flex: 1; height: 4px; background: var(--bg4); border-radius: 2px; }
+  .rr-bar { height: 4px; border-radius: 2px; transition: width .4s; }
+  .rr-val { font-size: 13px; font-weight: 600; flex-shrink: 0; min-width: 40px; text-align: right; }
+
+  /* Footer note */
+  .footnote { font-size: 10px; color: var(--t3); text-align: center; margin-top: 2.5rem; line-height: 1.8; }
+  .footnote a { color: var(--t2); }
+
+  @media (max-width: 480px) {
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+    .grid4 { grid-template-columns: 1fr 1fr; }
+    body { padding: 1.25rem 1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Swing Trade Planner</h1>
+    <p>NZD · Sharesies · Free live data</p>
+  </div>
+  <div class="header-right">
+    Prices: Yahoo Finance<br>
+    FX: Frankfurter API
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('plan', this)">Plan a trade</button>
+  <button class="tab" onclick="switchTab('log', this)">Trade log</button>
+</div>
+
+<!-- PLAN TAB -->
+<div id="plan" class="pane active">
+
+  <div class="ticker-row">
+    <div>
+      <label>Ticker symbol</label>
+      <input id="ticker" type="text" placeholder="NVDA" autocomplete="off" spellcheck="false">
+    </div>
+    <button class="btn" id="fetch-btn" onclick="fetchPrice()">
+      <span id="fetch-icon">↻</span> Fetch live price
+    </button>
+  </div>
+
+  <div class="quick-row">
+    <span class="quick-label">Quick:</span>
+    <button class="chip" onclick="quickFetch('NVDA')">NVDA</button>
+    <button class="chip" onclick="quickFetch('TSLA')">TSLA</button>
+    <button class="chip" onclick="quickFetch('AMD')">AMD</button>
+    <button class="chip" onclick="quickFetch('META')">META</button>
+    <button class="chip" onclick="quickFetch('AAPL')">AAPL</button>
+    <button class="chip" onclick="quickFetch('MSFT')">MSFT</button>
+    <button class="chip" onclick="quickFetch('AMZN')">AMZN</button>
+    <button class="chip" onclick="quickFetch('GOOGL')">GOOGL</button>
+  </div>
+
+  <div id="fetch-err" class="err-msg" style="display:none"></div>
+  <div id="price-badge" style="display:none"></div>
+
+  <div class="divider"></div>
+
+  <div class="grid2">
+    <div>
+      <label>Amount to invest (NZD $)</label>
+      <input id="invest" type="number" value="600" min="1" step="50">
+    </div>
+    <div>
+      <label>Wait for dip % <span style="font-size:10px;color:var(--t3)">(0 = buy now)</span></label>
+      <input id="dip" type="number" value="0" min="0" max="20" step="0.5">
+    </div>
+  </div>
+  <div class="grid3">
+    <div>
+      <label>Target profit %</label>
+      <input id="target-pct" type="number" value="12" min="1" step="0.5">
+    </div>
+    <div>
+      <label>Stop-loss %</label>
+      <input id="stop-pct" type="number" value="7" min="1" step="0.5">
+    </div>
+    <div>
+      <label>NZD/USD rate <span style="color:var(--green);font-size:9px" id="rate-auto-tag"></span></label>
+      <input id="rate" type="number" step="0.0001" placeholder="0.5900">
+    </div>
+  </div>
+
+  <button class="btn btn-primary btn-full" onclick="calculate()">Calculate alert prices →</button>
+
+  <div id="result-area"></div>
+
+</div>
+
+<!-- LOG TAB -->
+<div id="log" class="pane">
+  <div class="grid4" id="stats-grid">
+    <div class="stat-box"><div class="stat-label">Trades</div><div class="stat-val" id="s-count">0</div></div>
+    <div class="stat-box"><div class="stat-label">Win rate</div><div class="stat-val" id="s-wr" style="font-size:16px">—</div></div>
+    <div class="stat-box"><div class="stat-label">Net P&amp;L (NZD)</div><div class="stat-val" id="s-pnl">$0</div></div>
+    <div class="stat-box"><div class="stat-label">Reward:risk</div><div class="stat-val" id="s-rr" style="font-size:16px">—</div></div>
+  </div>
+  <div class="table-wrap" id="log-content"></div>
+</div>
+
+<p class="footnote">
+  Prices via Yahoo Finance (unofficial) · FX via Frankfurter (ECB data) · Data may be delayed 15–20 min<br>
+  Not financial advice. Always verify prices in Sharesies before trading.
+</p>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+var PROXY = 'https://stock-proxy.jimmytheguds.workers.dev';
+var trades = JSON.parse(localStorage.getItem('stp_trades') || '[]');
+var livePrice = null;
+var liveRate = null;
+
+// ─── Tab switching ────────────────────────────────────────────────────────────
+function switchTab(id, el) {
+  document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.pane').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+  if (id === 'log') renderLog();
+}
+
+// ─── Quick fetch ──────────────────────────────────────────────────────────────
+function quickFetch(ticker) {
+  document.getElementById('ticker').value = ticker;
+  fetchPrice();
+}
+
+// ─── Fetch live price + exchange rate ─────────────────────────────────────────
+async function fetchPrice() {
+  var ticker = document.getElementById('ticker').value.trim().toUpperCase();
+  if (!ticker) {
+    showErr('Enter a ticker symbol first.');
+    return;
+  }
+  document.getElementById('ticker').value = ticker;
+  setFetching(true);
+  hideErr();
+  document.getElementById('price-badge').style.display = 'none';
+  livePrice = null;
+
+  try {
+    // Fetch stock price and FX rate in parallel
+    var [stockRes, fxRes] = await Promise.all([
+      fetch(PROXY + '?ticker=' + ticker + '&type=stock'),
+      fetch(PROXY + '?type=fx')
+    ]);
+
+    // Parse FX
+    if (fxRes.ok) {
+      var fxData = await fxRes.json();
+      liveRate = fxData.rates && fxData.rates.USD ? fxData.rates.USD : null;
+      if (liveRate) {
+        document.getElementById('rate').value = liveRate.toFixed(4);
+        document.getElementById('rate-auto-tag').textContent = '✓ auto';
+      }
+    }
+
+    // Parse stock
+    if (!stockRes.ok) throw new Error('HTTP ' + stockRes.status);
+    var stockData = await stockRes.json();
+    var result = stockData && stockData.chart && stockData.chart.result && stockData.chart.result[0];
+    if (!result) throw new Error('No data returned');
+
+    var meta = result.meta;
+    var price = meta.regularMarketPrice || meta.previousClose;
+    var prevClose = meta.chartPreviousClose || meta.previousClose || price;
+    var changePct = prevClose ? ((price - prevClose) / prevClose * 100) : 0;
+    var currency = meta.currency || 'USD';
+
+    if (!price) throw new Error('Price not found');
+    if (currency !== 'USD') throw new Error('Only USD stocks supported (US-listed tickers)');
+
+    livePrice = price;
+
+    var chgClass = changePct >= 0 ? 'up' : 'dn';
+    var chgSign = changePct >= 0 ? '+' : '';
+    var nzdStr = liveRate ? ('  ·  1 NZD = ' + liveRate.toFixed(4) + ' USD') : '';
+    var now = new Date().toLocaleTimeString('en-NZ', { hour: '2-digit', minute: '2-digit' });
+
+    document.getElementById('price-badge').style.display = 'flex';
+    document.getElementById('price-badge').innerHTML =
+      '<div class="price-badge">' +
+        '<span class="pb-ticker">' + ticker + '</span>' +
+        '<span class="pb-price">$' + price.toFixed(2) + '<span>USD</span></span>' +
+        '<span class="pb-chg ' + chgClass + '">' + chgSign + changePct.toFixed(2) + '%</span>' +
+        '<span class="pb-rate">' + (liveRate ? '1 NZD = ' + liveRate.toFixed(4) + ' USD' : 'Enter rate manually') + '</span>' +
+        '<span class="pb-time">Last updated ' + now + ' (may be 15–20 min delayed)</span>' +
+      '</div>';
+
+  } catch(e) {
+    var msg = e.message || 'Unknown error';
+    if (msg.includes('404') || msg.includes('No data')) {
+      showErr('Ticker "' + ticker + '" not found. Use a US-listed symbol like NVDA, TSLA, AAPL.');
+    } else if (msg.includes('USD stocks')) {
+      showErr('This ticker isn\'t USD-denominated. Use US-listed stocks only.');
+    } else {
+      showErr('Could not fetch price. Check your internet connection and try again. (' + msg + ')');
+    }
+    livePrice = null;
+  }
+
+  setFetching(false);
+}
+
+function setFetching(on) {
+  var btn = document.getElementById('fetch-btn');
+  var icon = document.getElementById('fetch-icon');
+  btn.disabled = on;
+  btn.style.opacity = on ? '0.6' : '1';
+  if (on) {
+    icon.outerHTML = '<span id="fetch-icon" class="spin"></span>';
+  } else {
+    var el = document.getElementById('fetch-icon');
+    if (el) el.outerHTML = '<span id="fetch-icon">↻</span>';
+  }
+}
+
+function showErr(msg) {
+  var el = document.getElementById('fetch-err');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideErr() {
+  document.getElementById('fetch-err').style.display = 'none';
+}
+
+// ─── Calculate alert prices ───────────────────────────────────────────────────
+function calculate() {
+  var ticker = document.getElementById('ticker').value.trim().toUpperCase();
+  var rate = parseFloat(document.getElementById('rate').value);
+  var invest = parseFloat(document.getElementById('invest').value) || 600;
+  var dip = parseFloat(document.getElementById('dip').value) || 0;
+  var tgtPct = parseFloat(document.getElementById('target-pct').value) || 12;
+  var stpPct = parseFloat(document.getElementById('stop-pct').value) || 7;
+
+  if (!ticker) { showErr('Enter a ticker first.'); return; }
+  if (!livePrice) { showErr('Fetch the live price first.'); return; }
+  if (!rate || rate <= 0) { showErr('Enter or fetch the NZD/USD rate.'); return; }
+
+  var buyUSD  = livePrice * (1 - dip / 100);
+  var sellUSD = buyUSD * (1 + tgtPct / 100);
+  var stopUSD = buyUSD * (1 - stpPct / 100);
+  var buyNZD  = buyUSD / rate;
+  var sellNZD = sellUSD / rate;
+  var stopNZD = stopUSD / rate;
+  var shares  = Math.floor(invest / buyNZD);
+  var invested = shares * buyNZD;
+  var gain    = shares * (sellNZD - buyNZD);
+  var loss    = shares * (buyNZD - stopNZD);
+  var rr      = loss > 0 ? (gain / loss) : 0;
+  var rrGood  = rr >= 2;
+  var dipNote = dip > 0 ? ' · buy after ' + dip + '% dip' : '';
+
+  var pendingTrade = {
+    ticker, rate, invest, dip, tgtPct, stpPct,
+    buyUSD, sellUSD, stopUSD, buyNZD, sellNZD, stopNZD,
+    shares, invested, gain, loss, rr,
+    status: 'watching',
+    date: new Date().toLocaleDateString('en-NZ', { day: '2-digit', month: 'short', year: '2-digit' })
+  };
+
+  document.getElementById('result-area').innerHTML =
+    '<div class="alert-card">' +
+      '<div class="alert-card-hdr">' +
+        '<span class="ac-title">' + ticker + ' alerts' + dipNote + '</span>' +
+        '<span class="ac-rr ' + (rrGood ? 'good' : 'bad') + '">' + rr.toFixed(1) + ':1 reward:risk</span>' +
+      '</div>' +
+
+      alertRow('#00e096', 'Alert 1 — Buy trigger', 'Set this price alert in Sharesies, then buy', buyUSD, buyNZD) +
+      alertRow('#4da6ff', 'Alert 2 — Sell for profit', '+' + tgtPct + '% gain · sell immediately when hit', sellUSD, sellNZD) +
+      alertRow('#ff4f4f', 'Alert 3 — Stop-loss', '−' + stpPct + '% · sell immediately, no hesitation', stopUSD, stopNZD) +
+
+      '<div class="rr-row">' +
+        '<span class="rr-label">Reward:risk</span>' +
+        '<div class="rr-bar-bg"><div class="rr-bar" style="width:' + Math.min(rr / 3 * 100, 100) + '%;background:' + (rrGood ? 'var(--green)' : 'var(--red)') + '"></div></div>' +
+        '<span class="rr-val" style="color:' + (rrGood ? 'var(--green)' : 'var(--red)') + '">' + rr.toFixed(1) + ':1</span>' +
+      '</div>' +
+
+      '<div class="summary-grid">' +
+        sm('Shares to buy', shares) +
+        sm('Max profit (NZD)', '+$' + gain.toFixed(0), 'var(--green)') +
+        sm('Max loss (NZD)', '−$' + loss.toFixed(0), 'var(--red)') +
+      '</div>' +
+
+      '<div class="save-row">' +
+        '<button class="btn" id="save-btn" onclick="saveTrade(' + encodeTradeArg(pendingTrade) + ')">Save to log →</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function alertRow(color, label, desc, usd, nzd) {
+  return '<div class="alert-row">' +
+    '<div class="dot" style="background:' + color + '"></div>' +
+    '<div class="al-info"><div class="al-label">' + label + '</div><div class="al-desc">' + desc + '</div></div>' +
+    '<div class="al-prices"><div class="al-usd" style="color:' + color + '">$' + usd.toFixed(2) + ' <span style="font-size:11px;color:var(--t2)">USD</span></div><div class="al-nzd">≈ $' + nzd.toFixed(2) + ' NZD</div></div>' +
+  '</div>';
+}
+
+function sm(label, val, color) {
+  return '<div class="sm"><div class="sm-label">' + label + '</div><div class="sm-val"' + (color ? ' style="color:' + color + '"' : '') + '>' + val + '</div></div>';
+}
+
+function encodeTradeArg(t) {
+  return "'" + JSON.stringify(t).replace(/'/g, "\\'") + "'";
+}
+
+// ─── Save trade ───────────────────────────────────────────────────────────────
+function saveTrade(json) {
+  var t = typeof json === 'string' ? JSON.parse(json) : json;
+  t.id = Date.now();
+  trades.push(t);
+  saveTrades();
+  var btn = document.getElementById('save-btn');
+  if (btn) { btn.textContent = '✓ Saved!'; btn.disabled = true; }
+}
+
+function saveTrades() {
+  localStorage.setItem('stp_trades', JSON.stringify(trades));
+}
+
+// ─── Trade log ────────────────────────────────────────────────────────────────
+function renderLog() {
+  updateStats();
+  if (!trades.length) {
+    document.getElementById('log-content').innerHTML =
+      '<div class="empty"><span class="empty-icon">📋</span>No trades yet.<br>Plan one on the first tab and save it.</div>';
+    return;
+  }
+
+  var rows = trades.map(function(t) {
+    var pnl = t.status === 'profit'
+      ? '<span style="color:var(--green)">+$' + t.gain.toFixed(0) + '</span>'
+      : t.status === 'loss'
+        ? '<span style="color:var(--red)">−$' + t.loss.toFixed(0) + '</span>'
+        : '<span style="color:var(--t3)">—</span>';
+
+    var tagClass = { watching: 'tag-w', open: 'tag-o', profit: 'tag-p', loss: 'tag-l' }[t.status] || 'tag-w';
+    var tagLabel = { watching: 'Watching', open: 'Bought', profit: 'Profit ✓', loss: 'Loss ✗' }[t.status] || 'Watching';
+
+    return '<tr>' +
+      '<td style="color:var(--t2)">' + t.date + '</td>' +
+      '<td style="font-weight:600;color:var(--t1)">' + t.ticker + '</td>' +
+      '<td style="color:var(--green)">$' + t.buyUSD.toFixed(2) + '</td>' +
+      '<td style="color:var(--blue)">$' + t.sellUSD.toFixed(2) + '</td>' +
+      '<td style="color:var(--red)">$' + t.stopUSD.toFixed(2) + '</td>' +
+      '<td style="color:var(--t2)">$' + Math.round(t.invested) + '</td>' +
+      '<td>' + pnl + '</td>' +
+      '<td>' +
+        '<span class="tag ' + tagClass + '">' + tagLabel + '</span>' +
+        '<select class="status-select" onchange="updateStatus(' + t.id + ', this.value)">' +
+          '<option value="watching"' + (t.status === 'watching' ? ' selected' : '') + '>Watching</option>' +
+          '<option value="open"' + (t.status === 'open' ? ' selected' : '') + '>Bought</option>' +
+          '<option value="profit"' + (t.status === 'profit' ? ' selected' : '') + '>Sold — profit</option>' +
+          '<option value="loss"' + (t.status === 'loss' ? ' selected' : '') + '>Sold — loss</option>' +
+        '</select>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+
+  document.getElementById('log-content').innerHTML =
+    '<table>' +
+      '<thead><tr>' +
+        '<th>Date</th><th>Ticker</th><th>Buy</th><th>Target</th><th>Stop</th><th>Invested</th><th>P&amp;L</th><th>Status</th>' +
+      '</tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+    '</table>';
+}
+
+function updateStatus(id, val) {
+  var t = trades.find(function(x){ return x.id === id; });
+  if (t) { t.status = val; saveTrades(); updateStats(); renderLog(); }
+}
+
+function updateStats() {
+  var wins   = trades.filter(function(t){ return t.status === 'profit'; });
+  var losses = trades.filter(function(t){ return t.status === 'loss'; });
+  var closed = wins.length + losses.length;
+  var net    = wins.reduce(function(s, t){ return s + t.gain; }, 0) -
+               losses.reduce(function(s, t){ return s + t.loss; }, 0);
+  var avgG   = wins.length   ? wins.reduce(function(s,t){ return s+t.tgtPct; },0) / wins.length   : 0;
+  var avgL   = losses.length ? losses.reduce(function(s,t){ return s+t.stpPct; },0) / losses.length : 0;
+  var rr     = avgL ? (avgG / avgL).toFixed(1) : '—';
+  var wr     = closed ? Math.round(wins.length / closed * 100) + '%' : '—';
+
+  document.getElementById('s-count').textContent = trades.length;
+  document.getElementById('s-wr').textContent    = wr;
+  document.getElementById('s-wr').style.color    = closed ? (wins.length / closed >= 0.5 ? 'var(--green)' : 'var(--red)') : 'var(--t1)';
+  document.getElementById('s-pnl').textContent   = (net >= 0 ? '+' : '') + '$' + Math.round(net);
+  document.getElementById('s-pnl').style.color   = net > 0 ? 'var(--green)' : net < 0 ? 'var(--red)' : 'var(--t1)';
+  document.getElementById('s-rr').textContent    = rr + (rr !== '—' ? ':1' : '');
+  document.getElementById('s-rr').style.color    = rr !== '—' ? (parseFloat(rr) >= 2 ? 'var(--green)' : 'var(--amber)') : 'var(--t1)';
+}
+
+// Auto-fetch FX rate on load
+(async function() {
+  try {
+    var res  = await fetch(PROXY + '?type=fx');
+    var data = await res.json();
+    if (data.rates && data.rates.USD) {
+      liveRate = data.rates.USD;
+      document.getElementById('rate').value = liveRate.toFixed(4);
+      document.getElementById('rate-auto-tag').textContent = '✓ auto';
+    }
+  } catch(e) { /* silent fail — user can enter manually */ }
+})();
+</script>
+</body>
+</html>
