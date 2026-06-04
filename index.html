@@ -411,7 +411,7 @@ function calculate() {
   var rrGood  = rr >= 2;
   var dipNote = dip > 0 ? ' · buy after ' + dip + '% dip' : '';
 
-  var pendingTrade = {
+  pendingTrade = {
     ticker, rate, invest, dip, tgtPct, stpPct,
     buyUSD, sellUSD, stopUSD, buyNZD, sellNZD, stopNZD,
     shares, invested, gain, loss, rr,
@@ -443,7 +443,7 @@ function calculate() {
       '</div>' +
 
       '<div class="save-row">' +
-        '<button class="btn" id="save-btn" onclick="saveTrade(' + encodeTradeArg(pendingTrade) + ')">Save to log →</button>' +
+        '<button class="btn" id="save-btn" onclick="savePending()">Save to log →</button>' +
       '</div>' +
     '</div>';
 }
@@ -460,16 +460,16 @@ function sm(label, val, color) {
   return '<div class="sm"><div class="sm-label">' + label + '</div><div class="sm-val"' + (color ? ' style="color:' + color + '"' : '') + '>' + val + '</div></div>';
 }
 
-function encodeTradeArg(t) {
-  return "'" + JSON.stringify(t).replace(/'/g, "\\'") + "'";
-}
-
 // ─── Save trade ───────────────────────────────────────────────────────────────
-function saveTrade(json) {
-  var t = typeof json === 'string' ? JSON.parse(json) : json;
+var pendingTrade = null;
+
+function savePending() {
+  if (!pendingTrade) return;
+  var t = Object.assign({}, pendingTrade);
   t.id = Date.now();
   trades.push(t);
   saveTrades();
+  pendingTrade = null;
   var btn = document.getElementById('save-btn');
   if (btn) { btn.textContent = '✓ Saved!'; btn.disabled = true; }
 }
