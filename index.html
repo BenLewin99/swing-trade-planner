@@ -514,13 +514,14 @@ function renderLog() {
           '<option value="loss"' + (t.status === 'loss' ? ' selected' : '') + '>Sold — loss</option>' +
         '</select>' +
       '</td>' +
+      '<td><button onclick="deleteTrade(' + t.id + ')" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px;padding:2px 6px;" title="Delete trade">✕</button></td>' +
     '</tr>';
   }).join('');
 
   document.getElementById('log-content').innerHTML =
     '<table>' +
       '<thead><tr>' +
-        '<th>Date</th><th>Ticker</th><th>Buy</th><th>Target</th><th>Stop</th><th>Invested</th><th>P&amp;L</th><th>Status</th>' +
+        '<th>Date</th><th>Ticker</th><th>Buy</th><th>Target</th><th>Stop</th><th>Invested</th><th>P&amp;L</th><th>Status</th><th></th>' +
       '</tr></thead>' +
       '<tbody>' + rows + '</tbody>' +
     '</table>';
@@ -529,6 +530,13 @@ function renderLog() {
 function updateStatus(id, val) {
   var t = trades.find(function(x){ return x.id === id; });
   if (t) { t.status = val; saveTrades(); updateStats(); renderLog(); }
+}
+
+function deleteTrade(id) {
+  if (!confirm('Remove this trade from the log?')) return;
+  trades = trades.filter(function(t){ return t.id !== id; });
+  saveTrades();
+  renderLog();
 }
 
 function updateStats() {
